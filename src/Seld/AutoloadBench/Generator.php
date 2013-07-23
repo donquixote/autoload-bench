@@ -55,42 +55,76 @@ class Generator
         'Config', 'Bridge', 'Logout', 'DateFormat', 'Core',
     ];
 
-    public function generate($amount, $path, $sharedPrefix = '')
+    public function generate(array $baseLevels, array $childLevels, $total)
     {
-        $classes = [];
-        while ($amount--) {
-            $class = $sharedPrefix . $this->generateName();
-            $file = $path.'/'.strtr($class, '\\', '/').'.php';
-            if (!is_dir(dirname($file))) {
-                mkdir(dirname($file), 0777, true);
+        return $this->generateRecursive(array_merge($baseLevels, $childLevels), $total, count($baseLevels) - 1);
+    }
+
+    protected function generateRecursive(array $levels, $total, $magicLevel) {
+        if (empty($levels)) {
+            $classes = $this->classes;
+            $i = 0;
+            while ($total > count($classes)) {
+                foreach ($this->classes as $class) {
+                    $classes[] = $class . ++$i;
+                }
             }
-            file_put_contents($file, $this->getBody($class));
-            $classes[] = $class;
+            shuffle($classes);
+            return array_fill_keys(array_slice($classes, 0, $total), TRUE);
+        }
+        $level = array_shift($levels);
+
+        if (1 === $level) {
+            $pieces = [$this->namespaces[array_rand($this->namespaces)]];
+            $count = 1;
+        }
+        elseif (is_string($level)) {
+            $pieces = [$level];
+            $count = 1;
+        }
+        else {
+            $pieces = $this->namespaces;
+            $i = 0;
+            while ($level > count($pieces)) {
+                foreach ($this->namespaces as $piece) {
+                    $pieces[] = $piece . ++$i;
+                }
+            }
+            shuffle($pieces);
+            $pieces = array_slice($pieces, 0, $level);
+            $count = $level;
         }
 
+        $classes = [];
+        foreach ($pieces as $i => $piece) {
+            if (0 === $magicLevel) {
+                $classes[$piece] = [];
+            }
+            $partial = round($total / ($count - $i));
+            $total -= $partial;
+            foreach($this->generateRecursive($levels, $partial, $magicLevel - 1) as $class => $x) {
+                if (0 === $magicLevel) {
+                    $classes[$piece][$class] = $x;
+                }
+                else {
+                    $classes[$piece . '\\' . $class] = $x;
+                }
+            }
+        }
+        if (0 === $magicLevel) {
+            $classes = $this->shuffleAssoc($classes);
+        }
         return $classes;
     }
 
-    protected function generateName()
+    protected function shuffleAssoc(array $list)
     {
-        $name = [];
-        $depth = rand(1, 5);
-
-        foreach (array_rand($this->namespaces, rand(2, 5)) as $key) {
-            $name[] = $this->namespaces[$key];
+        $keys = array_keys($list);
+        shuffle($keys);
+        $random = [];
+        foreach ($keys as $key) {
+            $random[$key] = $list[$key];
         }
-
-        $name[] = $this->classes[array_rand($this->classes, 1)];
-
-        return implode('\\', $name);
-    }
-
-    protected function getBody($class)
-    {
-        $pos = strrpos($class, '\\');
-
-        return '<?php namespace '.substr($class, 0, $pos).';
-            class '.substr($class, $pos+1).' {}
-        ';
+        return $random;
     }
 }

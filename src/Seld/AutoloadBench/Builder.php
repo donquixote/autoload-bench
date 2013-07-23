@@ -2,34 +2,54 @@
 
 namespace Seld\AutoloadBench;
 
-abstract class Builder
+use Seld\AutoloadBench\Loader\ClassMapLoaderInterface;
+use Seld\AutoloadBench\Loader\PrefixLoaderInterface;
+
+class Builder
 {
-    protected $path;
-    protected $instance;
+    protected $loaderClasses = [];
+    protected $filesystem;
 
-    public function __construct($path)
+    public function __construct(MockFilesystem $filesystem, array $excludedLoaders = array())
     {
-        $this->path = $path;
-    }
-
-    public function prepare($classes, $path, $prefixMapLevel = 1) {
-        $this->build($classes, $path, $prefixMapLevel);
-        $this->instance = NULL;
-    }
-
-    abstract protected function build($classes, $path);
-
-    public function enabled()
-    {
-        return true;
-    }
-
-    public function getLoader()
-    {
-        if (!$this->instance) {
-            $this->instance = require $this->path.'/loader.php';
+        $this->filesystem = $filesystem;
+        $excludedLoaders = array_combine($excludedLoaders, $excludedLoaders);
+        foreach (glob(__DIR__.'/Loader/*.php') as $file) {
+            $name = basename($file, '.php');
+            if (!empty($excludedLoaders[$name])) {
+                continue;
+            }
+            $class = 'Seld\AutoloadBench\Loader\\' . $name;
+            $refClass = new \ReflectionClass($class);
+            if (!$refClass->isAbstract() && !$refClass->isInterface()) {
+                $this->loaderClasses[$name] = $class;
+            }
         }
+    }
 
-        return $this->instance;
+    public function buildLoaders(array $classMap, array $prefixes) {
+        $loaders = array();
+        $this->filesystem->setClassMap($classMap);
+        foreach ($this->loaderClasses as $name => $loaderClass) {
+            if (is_a($loaderClass, 'Seld\AutoloadBench\Loader\ClassMapLoaderInterface', TRUE)) {
+                /**
+                 * @var ClassMapLoaderInterface $loader
+                 */
+                $loader = new $loaderClass;
+                $loader->setFilesystem($this->filesystem);
+                $loader->setClassMap($classMap);
+                $loaders['CLASSMAP: ' . $name] = $loader;
+            }
+            if (is_a($loaderClass, 'Seld\AutoloadBench\Loader\PrefixLoaderInterface', TRUE)) {
+                /**
+                 * @var PrefixLoaderInterface $loader
+                 */
+                $loader = new $loaderClass;
+                $loader->setFilesystem($this->filesystem);
+                $loader->setPrefixes($prefixes);
+                $loaders['PREFIX:   ' . $name] = $loader;
+            }
+        }
+        return $loaders;
     }
 }

@@ -3,13 +3,18 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-(new Seld\AutoloadBench\Runner(dirname(__DIR__).'/build'))
-    ->prepare(2000)
-    ->run([200, 500, -500], 100)
-    ->prepare(1000, 'SharedVendor\\')
-    ->run([300], 100)
-    ->prepare(1000, 'SharedVendor\\', 2)
-    ->run([300], 100)
-    ->prepare(1000, '', 2)
-    ->run([300], 40)
+$gen = new Seld\AutoloadBench\Generator();
+// print_r($gen->generate(['Base', 25], [2, 3], 50));
+
+
+(new Seld\AutoloadBench\Runner(dirname(__DIR__).'/build', ['APC', 'ClassMap', 'ClassMapFileExists', 'ClassMapIsFile', 'PSR0', 'Composer']))
+  ->prepare([5], [10, 10], 3000)->run([300], 30)
+  ->prepare([30], [10, 10], 3000)->run([300], 30)
+  ->prepare([120], [10, 10], 3000)->run([300], 30)
+    // ->sectionLabel('$vendor\\$package\\')->prepare(1000, '', 2)->run([300], 40)
+    // ->sectionLabel('SharedVendor\\')->prepare(1000, 'SharedVendor\\')->run([300], 100)
+  ->prepare(['Drupal', 5], [5, 5], 3000)->run([300], 30)
+  ->prepare(['Drupal', 30], [5, 5], 3000)->run([300], 30)
+  ->prepare(['Drupal', 80], [5, 5], 3000)->run([300], 30)
+  ->prepare(['Drupal', 200], [5, 5], 3000)->run([300], 30)
 ;

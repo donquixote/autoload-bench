@@ -2,15 +2,18 @@
 
 namespace Seld\AutoloadBench\Loader;
 
-class PSR0
+class PSR0 extends AbstractPrefixLoader
 {
     private $prefixes = array();
+    private $fallbackDirs = array();
 
     /**
      * Registers a set of classes
      *
-     * @param string       $prefix The classes prefix
-     * @param array|string $paths  The location(s) of the classes
+     * @param string $prefix
+     *   The classes prefix
+     * @param array|string $paths
+     *   The location(s) of the classes
      */
     public function add($prefix, $paths)
     {
@@ -32,27 +35,13 @@ class PSR0
     }
 
     /**
-     * Loads the given class or interface.
-     *
-     * @param  string       $class The name of the class
-     * @return Boolean|null True, if loaded
-     */
-    public function loadClass($class)
-    {
-        if ($file = $this->findFile($class)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    /**
      * Finds the path to the file where the class is defined.
      *
      * @param string $class The name of the class
      *
      * @return string|null The path, if found
      */
+    /** @noinspection PhpInconsistentReturnPointsInspection */
     public function findFile($class)
     {
         if ('\\' == $class[0]) {
@@ -74,7 +63,7 @@ class PSR0
         foreach ($this->prefixes as $prefix => $dirs) {
             if (0 === strpos($class, $prefix)) {
                 foreach ($dirs as $dir) {
-                    if (file_exists($dir . DIRECTORY_SEPARATOR . $classPath)) {
+                    if ($this->filesystem->file_exists($dir . DIRECTORY_SEPARATOR . $classPath)) {
                         return $dir . DIRECTORY_SEPARATOR . $classPath;
                     }
                 }

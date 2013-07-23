@@ -13,11 +13,12 @@ namespace Seld\AutoloadBench\Loader;
  * @author Fabien Potencier <fabien@symfony.com>
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class ComposerSmart extends AbstractMultiLoader
+class ComposerSmarter extends AbstractMultiLoader
 {
     private $prefixes = array();
     private $fallbackDirs = array();
     private $useIncludePath = false;
+    private $magicIndex = 15;
 
     /**
      * Registers a set of classes, merging with any others previously set.
@@ -47,20 +48,20 @@ class ComposerSmart extends AbstractMultiLoader
             return;
         }
 
-        $first = $prefix[0];
-        if (!isset($this->prefixes[$first][$prefix])) {
-            $this->prefixes[$first][$prefix] = (array) $paths;
+        $indicator = $prefix[0] . (isset($prefix[$this->magicIndex]) ? $prefix[$this->magicIndex] : '');
+        if (!isset($this->prefixes[$indicator][$prefix])) {
+            $this->prefixes[$indicator][$prefix] = (array) $paths;
 
             return;
         }
         if ($prepend) {
-            $this->prefixes[$first][$prefix] = array_merge(
+            $this->prefixes[$indicator][$prefix] = array_merge(
                 (array) $paths,
-                $this->prefixes[$first][$prefix]
+                $this->prefixes[$indicator][$prefix]
             );
         } else {
-            $this->prefixes[$first][$prefix] = array_merge(
-                $this->prefixes[$first][$prefix],
+            $this->prefixes[$indicator][$prefix] = array_merge(
+                $this->prefixes[$indicator][$prefix],
                 (array) $paths
             );
         }
@@ -97,6 +98,20 @@ class ComposerSmart extends AbstractMultiLoader
         $classPath .= strtr($className, '_', DIRECTORY_SEPARATOR) . '.php';
 
         $first = $class[0];
+        if (isset($class[$this->magicIndex])) {
+            $indicator = $first . $class[$this->magicIndex];
+            if (isset($this->prefixes[$indicator])) {
+                foreach ($this->prefixes[$indicator] as $prefix => $dirs) {
+                    if (0 === strpos($class, $prefix)) {
+                        foreach ($dirs as $dir) {
+                            if ($this->filesystem->file_exists($dir . DIRECTORY_SEPARATOR . $classPath)) {
+                                return $dir . DIRECTORY_SEPARATOR . $classPath;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if (isset($this->prefixes[$first])) {
             foreach ($this->prefixes[$first] as $prefix => $dirs) {
                 if (0 === strpos($class, $prefix)) {

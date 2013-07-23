@@ -1,13 +1,52 @@
-# PHP Autoloader Benchmark
+# PHP Autoloader Benchmark (Fork)
 
-This is a simple benchmarking tool that compares a few autoloading strategies.
+This is a fork of Seldaek's (Jordi Boggiano) "autoload-bench",
+https://github.com/seldaek/autoload-bench
+After doing really a lot of changes, I decided it is too much for a pull
+request, and I rather publish my own version.
+
+The goal is to compare a number of different autoload strategies, and to be
+able to fine-tune these algorithms for different use cases.
+
+Loader strategies:
+There are some based on PSR-0 prefix maps, some based on class maps, and some
+which can do both.
+Especially for the prefix-based PSR-0 loaders, there is a number of different
+lookup algorithms to compare.
+
+Use cases:
+* Some projects have few registered namespaces, others have a lot.
+* Some projects have many namespaces registered within one top-level vendor
+  namespace. Others have their namespaces distributed among different vendor
+  namespaces.
+* Some projects have deeply nested namespace hierarchies, others have rather flat
+  ones.
+
+The goal is to find the ideal loader strategy for each case, and also to
+identify loaders that are good overall.
+
+The original motivation to fork this was to be able to test the Krautoload
+loader.
+
+## Filesystem mocked out.
+
+The original autoload-bench would generate a huge amount of class files in the
+filesystem to play with.
+
+The forked autoload-bench does not do this at all, and mocks out file_exists().
+It turns out that all loaders that are tested run file_exists() exactly once
+(in the given test scenarios), so skipping it is fair for all.
+
 
 ## Usage
 
     composer install
     php -d apc.enable_cli=1 bin/bench
 
+
 ## Motivation
+
+(by Seldaek)
 
 While [other benchmarks](http://mwop.net/blog/245-Autoloading-Benchmarks.html)
 exist already, I needed one that could be run very easily, and that focused on
@@ -20,7 +59,7 @@ any way, please contribute it.
 
 ## License (MIT)
 
-> Copyright (c) 2012 Jordi Boggiano
+> Copyright (c) 2012 Jordi Boggiano, (c) 2013 Andreas Hennings
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal

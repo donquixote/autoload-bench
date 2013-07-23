@@ -2,167 +2,156 @@
 
 namespace Seld\AutoloadBench;
 
+use Seld\AutoloadBench\Loader\ClassLoaderInterface;
+
 class Runner
 {
-    protected $classes;
-    protected $builders;
+    /**
+     * @var Builder
+     */
+    protected $builder;
 
-    public function __construct($path)
-    {
-        $this->path = $path;
-        if (!is_writable($this->path)) {
-            throw new \RuntimeException('Make sure '.$this->path.' is writable');
-        }
+    /**
+     * @var array
+     */
+    protected $classMap = array();
 
-        foreach (glob(__DIR__.'/Builder/*.php') as $file) {
-            $name = basename($file, '.php');
-            $this->builders[strtolower($name)] = $name;
-        }
+    /**
+     * @var array
+     */
+    protected $loaders = array();
 
-        foreach ($this->builders as $name => $class) {
-            if (!is_dir($this->path.'/'.$name)) {
-                mkdir($this->path.'/'.$name, 0777, true);
-            }
-            $class = __NAMESPACE__.'\\Builder\\'.$class;
-            $instance = new $class($this->path.'/'.$name);
-            if ($instance->enabled()) {
-                $this->builders[$name] = $instance;
-            } else {
-                echo 'Skipped '.$name.' loader because it reports itself as disabled'.PHP_EOL;
-                unset($this->builders[$name]);
-            }
-        }
+    /**
+     * @var array
+     */
+    protected $stats = array();
+
+    public function __construct() {
+        $this->filesystem = new MockFilesystem();
+        $this->builder = new Builder($this->filesystem);
     }
 
-    public function prepare($numClasses, $sharedPrefix = '', $prefixMapLevel = 1)
+    public function prepare(array $baseLevels, array $childLevels, $total)
     {
-        $gen = new Generator;
-        if (!is_dir($this->path.'/classes')) {
-            mkdir($this->path.'/classes', 0777, true);
+        $fixtureClasses = (new Generator)->generate($baseLevels, $childLevels, $total);
+        $classMap = [];
+        $prefixes = [];
+        foreach ($fixtureClasses as $prefix => $suffixes) {
+            $prefixes[$prefix] = 'xyzbase';
+            foreach ($suffixes as $suffix => $true) {
+                $class = $prefix . '\\' . $suffix;
+                $classMap[$class] = 'xyzbase' . str_replace('\\', DIRECTORY_SEPARATOR, '\\' . $class) . '.php';
+            }
         }
+        $this->loaders = $this->builder->buildLoaders($classMap, $prefixes);
+        $this->classMap = $classMap;
 
-        echo PHP_EOL;
-        echo 'Generating '.$numClasses.' classes'.PHP_EOL;
-        if (!empty($sharedPrefix)) {
-            echo 'Shared prefix: ' . $sharedPrefix . PHP_EOL;
-        }
-        if (1 !== $prefixMapLevel) {
-            echo 'Prefix level for PSR-0: ' . $prefixMapLevel . PHP_EOL;
-        }
-        $this->classes = $gen->generate($numClasses, $this->path.'/classes', $sharedPrefix);
-        foreach ($this->builders as $name => $builder) {
-            $builder->prepare($this->classes, $this->path.'/classes', $prefixMapLevel);
-        }
+        echo PHP_EOL . PHP_EOL;
+        echo 'Generating: ' . implode('\\', $baseLevels) . ':\\' . implode('\\', $childLevels) . " * $total" . PHP_EOL;
+        echo '-------------------------------' . PHP_EOL . PHP_EOL;
 
         return $this;
     }
 
     public function run(array $series, $runs = 1)
     {
-        $total = $runs * count($this->builders);
-
-        echo 'Including classes'.PHP_EOL;
-        foreach ($this->builders as $name => $builder) {
-            $start = microtime(true);
-            $mem = memory_get_usage();
-            $loader = $builder->getLoader();
-            $results[$name] = microtime(true) - $start;
-            $memResults[$name] = memory_get_usage() - $mem;
-            unset($loader);
+        $total = $runs * count($this->loaders);
+        foreach ($series as $k => $load) {
+            $results = $this->runSeries($load, $runs, $total);
+            $this->printSeriesResults($results, $runs * $load);
+            $this->stats[$k] = $results;
         }
+        return $this;
+    }
 
-        $longestName = 0;
-        foreach ($results as $name => $data) {
-            $longestName = max(strlen($name), $longestName);
+    protected function generateSeries($load)
+    {
+        if ($load > $m = count($this->classMap)) {
+            throw new \Exception("$load > $m");
         }
-
-        asort($results);
-        $matrix = array();
-        foreach ($results as $name => $data) {
-            $row = array();
-            $row[] = '> '.$name.': ';
-            $row[] = sprintf('%.3fms', $data * 1000);
-            $row[] = ' memory use:';
-            $row[] = round($memResults[$name]/1024, 1).'KB';
-            $matrix[] = $row;
+        if ($load > 0) {
+            $toLoad = array_rand($this->classMap, $load);
         }
-        $this->printTable($matrix, [0, 1, 0, 1]);
-        echo PHP_EOL;
-
-        foreach ($series as $load) {
-            $results = [];
+        else {
             $toLoad = [];
-            if ($load > 0) {
-                foreach (array_rand($this->classes, $load) as $key) {
-                    $toLoad[] = $this->classes[$key];
-                }
-                $expected = true;
-            } else {
-                foreach (array_rand($this->classes, abs($load)) as $key) {
-                    $toLoad[] = '_FAIL_'.$this->classes[$key];
-                }
-                $expected = false;
+            foreach (array_rand($this->classMap, -$load) as $class) {
+                $toLoad[] = '_FAIL_' . $class;
             }
+        }
+        return $toLoad;
+    }
 
-            echo 'Starting '.$total.' runs ('.($load > 0 ? $load : 'fail '.abs($load)).' classes)'.PHP_EOL;
-            $run = 0;
-            $iterations = 0;
-            while ($iterations++ < $runs) {
-                foreach ($this->builders as $name => $builder) {
-                    $start = microtime(true);
-                    $loader = $builder->getLoader();
-                    foreach ($toLoad as $class) {
-                        if ($expected !== $loaderResult = $loader->loadClass($class)) {
-                            if (FALSE === $loaderResult) {
-                                throw new \RuntimeException($name.' failed to load '.$class);
-                            }
-                            elseif (TRUE === $loaderResult) {
-                                throw new \RuntimeException($name.' must not load '.$class);
-                            }
-                            else {
-                                throw new \RuntimeException($name.' must return TRUE or FALSE.');
-                            }
+    protected function runSeries($load, $runs, $total)
+    {
+        $toLoad = $this->generateSeries($load);
+        $expected = ($load > 0);
+        echo 'Starting '.$total.' runs ('.($load > 0 ? $load : 'fail '.abs($load)).' classes)'.PHP_EOL;
+        $run = 0;
+        $results = [];
+        for ($i = 0; $i < $runs; ++$i) {
+            /**
+             * @var ClassLoaderInterface $loader
+             */
+            foreach ($this->loaders as $name => $loader) {
+                $start = microtime(true);
+                $this->filesystem->reset();
+                foreach ($toLoad as $class) {
+                    if ($expected !== $loaderResult = $loader->loadClass($class)) {
+                        if (FALSE === $loaderResult) {
+                            throw new \RuntimeException($name.' failed to load '.$class);
+                        }
+                        elseif (TRUE === $loaderResult) {
+                            throw new \RuntimeException($name.' must not load '.$class);
+                        }
+                        else {
+                            throw new \RuntimeException($name.' must return TRUE or FALSE.');
                         }
                     }
-                    $results[$name]['runs'][$run] = microtime(true) - $start;
-
-                    $run++;
-                    if ($run > 0 && (($run-1) % 80) === 0) {
-                        echo PHP_EOL;
-                    }
-                    echo '.';
                 }
-            }
-            echo PHP_EOL.PHP_EOL;
+                $results[$name]['runs'][$run] = microtime(true) - $start;
+                $results[$name]['class_exists'][$run] = $this->filesystem->getCount();
 
-            $fastest = PHP_INT_MAX;
-            foreach ($results as $name => $data) {
-                $results[$name]['avg'] = array_sum($data['runs']) / $runs;
-                $fastest = min($fastest, $results[$name]['avg']);
-            }
-
-            uasort($results, function ($a, $b) {
-                if ($a['avg'] === $b['avg']) {
-                    return 0;
+                $run++;
+                if ($run > 0 && (($run-1) % 80) === 0) {
+                    echo PHP_EOL;
                 }
-
-                return $a['avg'] > $b['avg'] ? 1 : -1;
-            });
-
-            $matrix = array();
-            foreach ($results as $name => $data) {
-                $row = array();
-                $row[] = '> ' . $name . ':';
-                $row[] = sprintf('%.6fms', $data['avg'] * 1000);
-                $row[] = sprintf('(%.2fx)', $data['avg'] / $fastest);
-                $matrix[] = $row;
+                echo '.';
             }
-            $this->printTable($matrix, [0, 1, 1, 1]);
+        }
+        return $results;
+    }
 
-            echo PHP_EOL;
+    protected function printSeriesResults($results, $runs)
+    {
+        $fastest = PHP_INT_MAX;
+        foreach ($results as $name => $data) {
+            $results[$name]['avg'] = array_sum($data['runs']) / $runs;
+            $results[$name]['class_exists'] = array_sum($data['class_exists']) / $runs;
+            $fastest = min($fastest, $results[$name]['avg']);
         }
 
-        return $this;
+        uasort($results, function ($a, $b) {
+            if ($a['avg'] === $b['avg']) {
+                return 0;
+            }
+
+            return $a['avg'] > $b['avg'] ? 1 : -1;
+        });
+
+        $matrix = [['LOADER', 'DURATION', 'RATIO', 'CLASS_EXISTS']];
+        foreach ($results as $name => $data) {
+            $row = array();
+            $row[] = '> ' . $name . ':';
+            $row[] = sprintf('%.6fμs', $data['avg'] * 1000 * 1000);
+            $row[] = sprintf('(%.2fx)', $data['avg'] / $fastest);
+            $row[] = $data['class_exists'];
+            $matrix[] = $row;
+        }
+
+        echo PHP_EOL.PHP_EOL;
+        $this->printTable($matrix, [0, 1, 1]);
+
+        echo PHP_EOL;
     }
 
     protected function printTable(array $matrix, array $align, $glue = ' ')

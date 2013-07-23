@@ -2,19 +2,12 @@
 
 namespace Seld\AutoloadBench\Loader;
 
-class ClassMap
+class ClassMap extends AbstractClassMapLoader
 {
-    private $map;
-
-    public function __construct(array $map)
-    {
-        $this->map = $map;
-    }
-
     public function loadClass($name)
     {
-        if (isset($this->map[$name])) {
-            $file = $this->map[$name];
+        if (isset($this->classMap[$name])) {
+            $this->classMap[$name];
 
             return true;
         }

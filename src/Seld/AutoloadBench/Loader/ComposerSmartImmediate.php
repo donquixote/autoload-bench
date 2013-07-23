@@ -13,7 +13,7 @@ namespace Seld\AutoloadBench\Loader;
  * @author Fabien Potencier <fabien@symfony.com>
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class ComposerSmart extends AbstractMultiLoader
+class ComposerSmartImmediate extends AbstractMultiLoader
 {
     private $prefixes = array();
     private $fallbackDirs = array();
@@ -22,12 +22,9 @@ class ComposerSmart extends AbstractMultiLoader
     /**
      * Registers a set of classes, merging with any others previously set.
      *
-     * @param string $prefix
-     *   The classes prefix
-     * @param array|string $paths
-     *   The location(s) of the classes
-     * @param bool $prepend
-     *   Prepend the location(s)
+     * @param string       $prefix  The classes prefix
+     * @param array|string $paths   The location(s) of the classes
+     * @param bool         $prepend Prepend the location(s)
      */
     public function add($prefix, $paths, $prepend = false)
     {
@@ -67,13 +64,12 @@ class ComposerSmart extends AbstractMultiLoader
     }
 
     /**
-     * Finds the path to the file where the class is defined.
+     * Loads the given class or interface.
      *
-     * @param string $class The name of the class
-     *
-     * @return string|bool The path if found, false otherwise
+     * @param  string       $class The name of the class
+     * @return Boolean|null True, if loaded
      */
-    public function findFile($class)
+    public function loadClass($class)
     {
         // work around for PHP 5.3.0 - 5.3.2 https://bugs.php.net/50731
         if ('\\' == $class[0]) {
@@ -81,7 +77,8 @@ class ComposerSmart extends AbstractMultiLoader
         }
 
         if (isset($this->classMap[$class])) {
-            return $this->classMap[$class];
+            $this->classMap[$class];
+            return true;
         }
 
         if (false !== $pos = strrpos($class, '\\')) {
@@ -102,7 +99,9 @@ class ComposerSmart extends AbstractMultiLoader
                 if (0 === strpos($class, $prefix)) {
                     foreach ($dirs as $dir) {
                         if ($this->filesystem->file_exists($dir . DIRECTORY_SEPARATOR . $classPath)) {
-                            return $dir . DIRECTORY_SEPARATOR . $classPath;
+                            /** @noinspection PhpExpressionResultUnusedInspection */
+                            $dir . DIRECTORY_SEPARATOR . $classPath;
+                            return true;
                         }
                     }
                 }
@@ -111,12 +110,16 @@ class ComposerSmart extends AbstractMultiLoader
 
         foreach ($this->fallbackDirs as $dir) {
             if ($this->filesystem->file_exists($dir . DIRECTORY_SEPARATOR . $classPath)) {
-                return $dir . DIRECTORY_SEPARATOR . $classPath;
+                /** @noinspection PhpExpressionResultUnusedInspection */
+                $dir . DIRECTORY_SEPARATOR . $classPath;
+                return true;
             }
         }
 
         if ($this->useIncludePath && $file = stream_resolve_include_path($classPath)) {
-            return $file;
+            /** @noinspection PhpExpressionResultUnusedInspection */
+            $file;
+            return true;
         }
 
         return $this->classMap[$class] = false;

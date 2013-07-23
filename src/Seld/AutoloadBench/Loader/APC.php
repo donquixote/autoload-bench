@@ -2,24 +2,20 @@
 
 namespace Seld\AutoloadBench\Loader;
 
-class APC
+class APC extends AbstractClassMapLoader
 {
-    private $map;
-
-    public function __construct(array $map)
-    {
-        $this->map = $map;
-    }
-
     public function loadClass($name)
     {
-        if ($class = apc_fetch($name)) {
+        if ($file = apc_fetch($name)) {
+            /** @noinspection PhpExpressionResultUnusedInspection */
+            $file;
             return true;
         }
 
-        if (isset($this->map[$name])) {
-            apc_store($name, $file = $this->map[$name]);
-
+        if (isset($this->classMap[$name])) {
+            apc_store($name, $file = $this->classMap[$name]);
+            /** @noinspection PhpExpressionResultUnusedInspection */
+            $file;
             return true;
         }
 
