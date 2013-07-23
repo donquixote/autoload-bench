@@ -5,10 +5,14 @@ https://github.com/seldaek/autoload-bench
 After doing really a lot of changes, I decided it is too much for a pull
 request, and I rather publish my own version.
 
-The goal is to compare a number of different autoload strategies, and to be
-able to fine-tune these algorithms for different use cases.
+Goals:  
+- Compare a number of different autoload strategies
+- Fine-tune those algorithms
+- Find the ideal loader for different use cases
+- Find the ideal loader strategy for Drupal core.
+- Compare loader strategies that support both PSR-0 and the upcoming **PSR-4**.
 
-Loader strategies:
+Loader strategies:  
 There are some based on PSR-0 prefix maps, some based on class maps, and some
 which can do both.
 Especially for the prefix-based PSR-0 loaders, there is a number of different
