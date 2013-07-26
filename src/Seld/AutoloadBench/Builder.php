@@ -32,7 +32,7 @@ class Builder
         $loaders = array();
         $this->filesystem->setClassMap($classMap);
         foreach ($this->loaderClasses as $name => $loaderClass) {
-            if (is_a($loaderClass, 'Seld\AutoloadBench\LoaderType\ClassMapLoaderInterface', TRUE)) {
+            if (FALSE && is_a($loaderClass, 'Seld\AutoloadBench\LoaderType\ClassMapLoaderInterface', TRUE)) {
                 /**
                  * @var ClassMapLoaderInterface $loader
                  */
@@ -41,7 +41,7 @@ class Builder
                 $loader->setClassMap($classMap);
                 $loaders['CLASSMAP:     ' . $name] = $loader;
             }
-            if (is_a($loaderClass, 'Seld\AutoloadBench\LoaderType\PrefixLoaderInterface', TRUE)) {
+            if (FALSE && is_a($loaderClass, 'Seld\AutoloadBench\LoaderType\PrefixLoaderInterface', TRUE)) {
                 /**
                  * @var PrefixLoaderInterface $loader
                  */
@@ -51,6 +51,14 @@ class Builder
                 $loaders['PSR-0:        ' . $name] = $loader;
             }
             if (is_a($loaderClass, 'Seld\AutoloadBench\LoaderType\Psr4LoaderInterface', TRUE)) {
+
+                /**
+                 * @var PrefixLoaderInterface $loader
+                 */
+                $loader = new $loaderClass;
+                $loader->setFilesystem($this->filesystem);
+                $this->loaderAddPrefixes($loader, $prefixes);
+                $loaders['PSR-0:        ' . $name] = $loader;
 
                 /**
                  * @var Psr4LoaderInterface $loader
