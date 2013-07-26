@@ -51,6 +51,7 @@ class Builder
                 $loaders['PSR-0:        ' . $name] = $loader;
             }
             if (is_a($loaderClass, 'Seld\AutoloadBench\LoaderType\Psr4LoaderInterface', TRUE)) {
+
                 /**
                  * @var Psr4LoaderInterface $loader
                  */
@@ -93,10 +94,13 @@ class Builder
         return $loaders;
     }
 
-    protected function loaderAddPrefixes(PrefixLoaderInterface $loader, $prefixes, $fail = FALSE)
+    protected function loaderAddPrefixes(PrefixLoaderInterface $loader, $prefixes, $failPrefix = FALSE, $failFile = FALSE)
     {
         foreach ($prefixes as $prefix => $baseDirs) {
-            if ($fail) {
+            if ($failPrefix) {
+                $loader->add($prefix . '.FAIL', $baseDirs);
+            }
+            elseif ($failFile) {
                 $baseDirsFail = array();
                 foreach ((array)$baseDirs as $baseDir) {
                     $baseDirsFail[] = $baseDir . '.FAIL';
@@ -109,16 +113,19 @@ class Builder
         }
     }
 
-    protected function loaderAddAsPsr4(Psr4LoaderInterface $loader, $prefixes, $fail = FALSE)
+    protected function loaderAddAsPsr4(Psr4LoaderInterface $loader, $prefixes, $failPrefix = FALSE, $failFile = FALSE)
     {
         foreach ($prefixes as $namespace => $baseDirs) {
             $dirSuffix = strtr($namespace, '\\', DIRECTORY_SEPARATOR);
             $baseDirsPsr4 = array();
             foreach ((array)$baseDirs as $baseDir) {
-                if ($fail) {
+                if ($failFile) {
                     $dirSuffix .= '.FAIL';
                 }
                 $baseDirsPsr4[] = $baseDir . DIRECTORY_SEPARATOR . $dirSuffix;
+            }
+            if ($failPrefix) {
+                $namespace .= '.FAIL';
             }
             $loader->addPsr4($namespace, $baseDirsPsr4);
         }
