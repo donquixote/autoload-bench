@@ -96,6 +96,9 @@ class ComposerSmartPsr4Separate extends AbstractPsr4Loader
             return;
         }
 
+        $prefix = rtrim($prefix, '\\');
+        $prefix = $prefix . '\\';
+
         if (!isset($this->prefixDirsPsr4[$prefix])) {
             $this->prefixLengthsPsr4[$prefix[0]][$prefix] = strlen($prefix);
             $this->prefixDirsPsr4[$prefix] = (array) $paths;
@@ -133,25 +136,23 @@ class ComposerSmartPsr4Separate extends AbstractPsr4Loader
         }
 
         $logicalPath = strtr($class, '\\', DIRECTORY_SEPARATOR) . '.php';
-        if (false) {
 
-            $first = $class[0];
-            if (isset($this->prefixLengthsPsr4[$first])) {
-                foreach ($this->prefixLengthsPsr4[$first] as $prefix => $length) {
-                    if (0 === strpos($class, $prefix)) {
-                        foreach ($this->prefixDirsPsr4[$prefix] as $dir) {
-                            if ($this->filesystem->file_exists($file = $dir . DIRECTORY_SEPARATOR . substr($logicalPath, $length))) {
-                                return $file;
-                            }
+        $first = $class[0];
+        if (isset($this->prefixLengthsPsr4[$first])) {
+            foreach ($this->prefixLengthsPsr4[$first] as $prefix => $length) {
+                if (0 === strpos($class, $prefix)) {
+                    foreach ($this->prefixDirsPsr4[$prefix] as $dir) {
+                        if ($this->filesystem->file_exists($file = $dir . DIRECTORY_SEPARATOR . substr($logicalPath, $length))) {
+                            return $file;
                         }
                     }
                 }
             }
+        }
 
-            foreach ($this->fallbackDirsPsr4 as $dir) {
-                if ($this->filesystem->file_exists($file = $dir . DIRECTORY_SEPARATOR . $logicalPath)) {
-                    return $file;
-                }
+        foreach ($this->fallbackDirsPsr4 as $dir) {
+            if ($this->filesystem->file_exists($file = $dir . DIRECTORY_SEPARATOR . $logicalPath)) {
+                return $file;
             }
         }
 

@@ -43,6 +43,8 @@ class ComposerSmartPsr4Combined extends AbstractPsr4Loader
 
     public function addPsr4($prefix, $paths, $prepend = false)
     {
+        $prefix = rtrim($prefix, '\\');
+        $prefix = strlen($prefix) ? $prefix . '\\' : '';
         $paths = is_array($paths) ? array_fill_keys($paths, self::PSR4) : array($paths => self::PSR4);
         $this->addPrefixPaths($prefix, $paths, $prepend);
     }
@@ -156,7 +158,7 @@ class ComposerSmartPsr4Combined extends AbstractPsr4Loader
             }
         }
 
-        if ($this->useIncludePath && $file = stream_resolve_include_path($classPath)) {
+        if ($this->useIncludePath && $file = stream_resolve_include_path($logicalPathPsr0)) {
             return $file;
         }
 

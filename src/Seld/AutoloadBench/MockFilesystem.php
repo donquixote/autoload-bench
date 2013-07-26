@@ -29,7 +29,6 @@ class MockFilesystem
             return TRUE;
         }
         else {
-            print "$file DOES NOT EXIST.\n";
             return FALSE;
         }
     }
