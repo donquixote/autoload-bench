@@ -141,4 +141,9 @@ class ComposerSmartImmediateReturn extends AbstractMultiLoader
 
         return $this->classMap[$class] = false;
     }
+
+    public function findFile($class)
+    {
+        return $this->loadClass($class, TRUE);
+    }
 }
