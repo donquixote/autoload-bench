@@ -24,12 +24,9 @@ class ComposerSmartPsr4Separate extends AbstractPsr4Loader
 
     // PSR-0
     private $prefixesPsr0 = array();
-    private $fallbackDirs = array();
+    private $fallbackDirsPsr0 = array();
 
     private $useIncludePath = false;
-
-    const PSR0 = 1;
-    const PSR4 = 2;
 
     /**
      * Registers a set of classes, merging with any others previously set.
@@ -45,13 +42,13 @@ class ComposerSmartPsr4Separate extends AbstractPsr4Loader
     {
         if (!$prefix) {
             if ($prepend) {
-                $this->fallbackDirs = array_merge(
+                $this->fallbackDirsPsr0 = array_merge(
                     (array) $paths,
-                    $this->fallbackDirs
+                    $this->fallbackDirsPsr0
                 );
             } else {
-                $this->fallbackDirs = array_merge(
-                    $this->fallbackDirs,
+                $this->fallbackDirsPsr0 = array_merge(
+                    $this->fallbackDirsPsr0,
                     (array) $paths
                 );
             }
@@ -167,7 +164,6 @@ class ComposerSmartPsr4Separate extends AbstractPsr4Loader
             $logicalPathPsr0 = strtr($class, '_', DIRECTORY_SEPARATOR);
         }
 
-        $first = $class[0];
         if (isset($this->prefixesPsr0[$first])) {
             foreach ($this->prefixesPsr0[$first] as $prefix => $dirs) {
                 if (0 === strpos($class, $prefix)) {
@@ -180,7 +176,7 @@ class ComposerSmartPsr4Separate extends AbstractPsr4Loader
             }
         }
 
-        foreach ($this->fallbackDirs as $dir) {
+        foreach ($this->fallbackDirsPsr0 as $dir) {
             if ($this->filesystem->file_exists($file = $dir . DIRECTORY_SEPARATOR . $logicalPathPsr0)) {
                 return $file;
             }
