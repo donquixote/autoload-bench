@@ -1,6 +1,6 @@
 <?php
 
-namespace Seld\AutoloadBench\Loader;
+namespace Seld\AutoloadBench\LoaderType;
 
 
 interface ClassMapLoaderInterface extends ClassLoaderInterface

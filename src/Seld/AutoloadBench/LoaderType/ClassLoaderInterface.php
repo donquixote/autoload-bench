@@ -1,6 +1,6 @@
 <?php
 
-namespace Seld\AutoloadBench\Loader;
+namespace Seld\AutoloadBench\LoaderType;
 
 
 use Seld\AutoloadBench\MockFilesystem;

@@ -13,7 +13,9 @@ namespace Seld\AutoloadBench\Loader;
  * @author Fabien Potencier <fabien@symfony.com>
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class ComposerSmartPsr4Separate extends AbstractMultiLoader
+use Seld\AutoloadBench\LoaderType\AbstractPsr4Loader;
+
+class ComposerSmartPsr4Separate extends AbstractPsr4Loader
 {
     // PSR-4
     private $prefixLengthsPsr4 = array();

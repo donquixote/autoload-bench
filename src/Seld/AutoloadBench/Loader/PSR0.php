@@ -2,6 +2,8 @@
 
 namespace Seld\AutoloadBench\Loader;
 
+use Seld\AutoloadBench\LoaderType\AbstractPrefixLoader;
+
 class PSR0 extends AbstractPrefixLoader
 {
     private $prefixes = array();

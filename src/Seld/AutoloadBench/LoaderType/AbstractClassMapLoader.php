@@ -1,6 +1,9 @@
 <?php
 
-namespace Seld\AutoloadBench\Loader;
+namespace Seld\AutoloadBench\LoaderType;
+
+use Seld\AutoloadBench\LoaderType\AbstractLoader;
+use Seld\AutoloadBench\LoaderType\ClassMapLoaderInterface;
 
 abstract class AbstractClassMapLoader extends AbstractLoader implements ClassMapLoaderInterface
 {

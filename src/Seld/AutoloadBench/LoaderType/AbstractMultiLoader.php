@@ -1,8 +1,11 @@
 <?php
 
-namespace Seld\AutoloadBench\Loader;
+namespace Seld\AutoloadBench\LoaderType;
 
-abstract class AbstractMultiLoader extends AbstractClassMapLoader implements PrefixLoaderInterface
+use Seld\AutoloadBench\LoaderType\AbstractClassMapLoader;
+use Seld\AutoloadBench\LoaderType\PrefixLoaderInterface;
+
+abstract class AbstractMultiLoader extends AbstractClassMapLoader implements MultiLoaderInterface
 {
     public function setPrefixes(array $prefixes)
     {

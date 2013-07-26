@@ -13,6 +13,8 @@ namespace Seld\AutoloadBench\Loader;
  * @author Fabien Potencier <fabien@symfony.com>
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
+use Seld\AutoloadBench\LoaderType\AbstractMultiLoader;
+
 class ComposerSmartImmediatePSR4Special1 extends AbstractMultiLoader
 {
     private $prefixLengths = array();

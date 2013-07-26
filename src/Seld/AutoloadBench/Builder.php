@@ -2,8 +2,8 @@
 
 namespace Seld\AutoloadBench;
 
-use Seld\AutoloadBench\Loader\ClassMapLoaderInterface;
-use Seld\AutoloadBench\Loader\PrefixLoaderInterface;
+use Seld\AutoloadBench\LoaderType\ClassMapLoaderInterface;
+use Seld\AutoloadBench\LoaderType\PrefixLoaderInterface;
 
 class Builder
 {
@@ -31,7 +31,7 @@ class Builder
         $loaders = array();
         $this->filesystem->setClassMap($classMap);
         foreach ($this->loaderClasses as $name => $loaderClass) {
-            if (is_a($loaderClass, 'Seld\AutoloadBench\Loader\ClassMapLoaderInterface', TRUE)) {
+            if (is_a($loaderClass, 'Seld\AutoloadBench\LoaderType\ClassMapLoaderInterface', TRUE)) {
                 /**
                  * @var ClassMapLoaderInterface $loader
                  */
@@ -40,7 +40,7 @@ class Builder
                 $loader->setClassMap($classMap);
                 $loaders['CLASSMAP: ' . $name] = $loader;
             }
-            if (is_a($loaderClass, 'Seld\AutoloadBench\Loader\PrefixLoaderInterface', TRUE)) {
+            if (is_a($loaderClass, 'Seld\AutoloadBench\LoaderType\PrefixLoaderInterface', TRUE)) {
                 /**
                  * @var PrefixLoaderInterface $loader
                  */

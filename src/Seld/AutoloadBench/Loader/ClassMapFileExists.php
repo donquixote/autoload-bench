@@ -2,6 +2,8 @@
 
 namespace Seld\AutoloadBench\Loader;
 
+use Seld\AutoloadBench\LoaderType\AbstractClassMapLoader;
+
 class ClassMapFileExists extends AbstractClassMapLoader
 {
     public function loadClass($name)

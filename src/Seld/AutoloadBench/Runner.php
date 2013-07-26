@@ -2,7 +2,7 @@
 
 namespace Seld\AutoloadBench;
 
-use Seld\AutoloadBench\Loader\ClassLoaderInterface;
+use Seld\AutoloadBench\LoaderType\ClassLoaderInterface;
 
 class Runner
 {
@@ -90,7 +90,7 @@ class Runner
         $results = [];
         for ($i = 0; $i < $runs; ++$i) {
             /**
-             * @var ClassLoaderInterface $loader
+             * @var \Seld\AutoloadBench\LoaderType\ClassLoaderInterface $loader
              */
             foreach ($this->loaders as $name => $loader) {
                 $start = microtime(true);

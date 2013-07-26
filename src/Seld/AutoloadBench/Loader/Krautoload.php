@@ -3,6 +3,7 @@
 namespace Seld\AutoloadBench\Loader;
 
 use Seld\AutoloadBench\Loader\Krautoload\NamespacePlugin;
+use Seld\AutoloadBench\LoaderType\AbstractMultiLoader;
 
 /*
  * Copied from Krautoload sources (GPL licensed)
